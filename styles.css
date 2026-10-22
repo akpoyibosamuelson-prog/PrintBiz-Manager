@@ -27,7 +27,7 @@ html {
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #eff4ff 0%, #f7f8fc 100%);
+  background: linear-gradient(180deg, #eef4ff 0%, #f6f7fb 100%);
   color: var(--text);
   font-family: "Inter", sans-serif;
 }
@@ -154,6 +154,30 @@ button {
   gap: 14px;
 }
 
+.demo-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 28px;
+  background: linear-gradient(90deg, rgba(25,61,141,0.08), rgba(26,156,116,0.08));
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.demo-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  padding: 5px 10px;
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .search-inline input,
 .toolbar-inline input,
 .toolbar-inline select,
@@ -166,7 +190,7 @@ button {
   background: #fff;
   padding: 10px 12px;
   color: var(--text);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.12s ease;
 }
 
 .search-inline input:focus,
@@ -621,5 +645,10 @@ tbody tr:hover {
 
   .content-area {
     padding: 18px 16px 28px;
+  }
+
+  .demo-banner {
+    padding: 10px 16px;
+    flex-wrap: wrap;
   }
 }

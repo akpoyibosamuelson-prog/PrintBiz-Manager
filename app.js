@@ -58,6 +58,7 @@ const defaultState = {
       orderDate: '2026-10-04',
       deadline: '2026-10-09',
       sellingPrice: 540000,
+      amountPaid: 330000,
       status: 'In Production',
       notes: 'Front and back print with chest logo',
     },
@@ -69,6 +70,7 @@ const defaultState = {
       orderDate: '2026-09-18',
       deadline: '2026-09-28',
       sellingPrice: 420000,
+      amountPaid: 420000,
       status: 'Delivered',
       notes: 'Includes laminated sleeves',
     },
@@ -80,6 +82,7 @@ const defaultState = {
       orderDate: '2026-10-05',
       deadline: '2026-10-12',
       sellingPrice: 255000,
+      amountPaid: 100000,
       status: 'Confirmed',
       notes: 'Interior and exterior banner set',
     },
@@ -91,6 +94,7 @@ const defaultState = {
       orderDate: '2026-10-01',
       deadline: '2026-10-08',
       sellingPrice: 310000,
+      amountPaid: 150000,
       status: 'Awaiting Payment',
       notes: 'Reception sign and wall vinyl',
     },
@@ -102,6 +106,7 @@ const defaultState = {
       orderDate: '2026-10-12',
       deadline: '2026-10-18',
       sellingPrice: 680000,
+      amountPaid: 500000,
       status: 'Ready for Collection',
       notes: 'Full stage branding package',
     },
@@ -113,6 +118,7 @@ const defaultState = {
       orderDate: '2026-09-28',
       deadline: '2026-10-05',
       sellingPrice: 180000,
+      amountPaid: 180000,
       status: 'Delivered',
       notes: 'Double-sided premium card stock',
     },
@@ -234,22 +240,24 @@ function getOrderStatusClass(status) {
   return `status-${normalized}`;
 }
 
-function getOrderTotalPaid(orderId) {
-  return state.payments
-    .filter((payment) => payment.orderId === orderId)
+function getOrderAmountPaid(order) {
+  const explicitAmount = Number(order.amountPaid || 0);
+  const paymentTotal = state.payments
+    .filter((payment) => payment.orderId === order.id)
     .reduce((total, payment) => total + Number(payment.amount || 0), 0);
+  return Math.max(explicitAmount, paymentTotal);
 }
 
 function getOrderOutstanding(order) {
   const orderValue = Number(order.sellingPrice || 0);
-  const totalPaid = getOrderTotalPaid(order.id);
+  const totalPaid = getOrderAmountPaid(order);
   return Math.max(orderValue - totalPaid, 0);
 }
 
-function getOrderValueForMonth(dateKey) {
-  return state.orders
-    .filter((order) => order.orderDate && order.orderDate.startsWith(dateKey.slice(0, 7)))
-    .reduce((sum, order) => sum + Number(order.sellingPrice || 0), 0);
+function getOrderTotalPaid(orderId) {
+  const order = state.orders.find((item) => item.id === orderId);
+  if (!order) return 0;
+  return getOrderAmountPaid(order);
 }
 
 function getMonthLabel(dateString) {
@@ -277,7 +285,7 @@ function renderDashboardSummary() {
   const pendingOrders = state.orders.filter((order) => !['Delivered', 'Cancelled'].includes(order.status)).length;
   const lowStockCount = state.inventory.filter((item) => Number(item.stock) <= Number(item.minStock)).length;
   const inProduction = state.orders.filter((order) => order.status === 'In Production').length;
-  const estimatedProfit = totalCashReceived - totalExpenses;
+  const estimatedProfit = totalOrderValue - totalExpenses - outstandingBalances;
 
   const cards = [
     buildSummaryCard('Total order value', formatCurrency(totalOrderValue), '₦', 'primary'),
@@ -476,7 +484,7 @@ function renderOrders() {
     .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate))
     .map((order) => {
       const statusClass = getOrderStatusClass(order.status);
-      const paid = getOrderTotalPaid(order.id);
+      const paid = getOrderAmountPaid(order);
       const balance = getOrderOutstanding(order);
       return `
         <tr>
@@ -578,7 +586,7 @@ function renderPaymentOverview() {
     .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate))
     .map((order) => {
       const customerName = getCustomerName(order.customerId);
-      const paid = getOrderTotalPaid(order.id);
+      const paid = getOrderAmountPaid(order);
       const balance = getOrderOutstanding(order);
       return `
         <tr>
@@ -806,7 +814,7 @@ function bindGlobalSearch() {
           <td>${escapeHtml(order.quantity)}</td>
           <td>${escapeHtml(formatDate(order.deadline))}</td>
           <td>${formatCurrency(order.sellingPrice)}</td>
-          <td>${formatCurrency(getOrderTotalPaid(order.id))}</td>
+          <td>${formatCurrency(getOrderAmountPaid(order))}</td>
           <td>${formatCurrency(getOrderOutstanding(order))}</td>
           <td><span class="status-badge ${getOrderStatusClass(order.status)}">${escapeHtml(order.status)}</span></td>
           <td>—</td>
@@ -842,6 +850,7 @@ function bindOrderForm() {
       orderDate: document.getElementById('orderDate').value,
       deadline: document.getElementById('orderDeadline').value,
       sellingPrice: Number(document.getElementById('orderSellingPrice').value),
+      amountPaid: Number(document.getElementById('orderAmountPaid').value || 0),
       status: document.getElementById('orderStatus').value,
       notes: document.getElementById('orderNotes').value.trim(),
     };
@@ -851,8 +860,7 @@ function bindOrderForm() {
       return;
     }
 
-    const amountPaid = Number(document.getElementById('orderAmountPaid').value || 0);
-    if (amountPaid > order.sellingPrice) {
+    if (order.amountPaid > order.sellingPrice) {
       showError('The amount paid cannot exceed the order value.', '#orderFormMessage');
       return;
     }
@@ -864,19 +872,22 @@ function bindOrderForm() {
       state.orders.push(order);
     }
 
-    const existingPayments = state.payments.filter((payment) => payment.orderId === order.id);
-    if (amountPaid > 0 && !existingPayments.length) {
-      state.payments.push({
-        id: `PAY-${Date.now()}`,
-        orderId: order.id,
-        amount: amountPaid,
-        date: order.orderDate,
-        notes: 'Initial payment recorded from order form',
-      });
-    } else if (amountPaid > 0 && existingPayments.length) {
-      const firstPayment = existingPayments[0];
-      firstPayment.amount = amountPaid;
-      firstPayment.date = order.orderDate;
+    const paymentEntries = state.payments.filter((payment) => payment.orderId === order.id);
+    if (order.amountPaid > 0) {
+      if (paymentEntries.length === 0) {
+        state.payments.push({
+          id: `PAY-${Date.now()}`,
+          orderId: order.id,
+          amount: order.amountPaid,
+          date: order.orderDate,
+          notes: 'Initial payment recorded from order form',
+        });
+      } else {
+        paymentEntries.forEach((payment) => {
+          payment.amount = order.amountPaid;
+          payment.date = order.orderDate;
+        });
+      }
     }
 
     saveState();
@@ -907,7 +918,7 @@ function bindOrderForm() {
     document.getElementById('orderDate').value = order.orderDate;
     document.getElementById('orderDeadline').value = order.deadline;
     document.getElementById('orderSellingPrice').value = order.sellingPrice;
-    document.getElementById('orderAmountPaid').value = getOrderTotalPaid(order.id);
+    document.getElementById('orderAmountPaid').value = getOrderAmountPaid(order);
     document.getElementById('orderStatus').value = order.status;
     document.getElementById('orderNotes').value = order.notes;
     document.getElementById('orderFormTitle').textContent = `Edit ${order.id}`;
@@ -1120,7 +1131,7 @@ function bindPaymentAndExpenseForms() {
       return;
     }
 
-    const totalPaid = getOrderTotalPaid(orderId);
+    const totalPaid = getOrderAmountPaid(order);
     const remainingBalance = Number(order.sellingPrice || 0) - totalPaid;
 
     if (paymentAmount > remainingBalance && !authorizedAdjustment) {
@@ -1145,6 +1156,7 @@ function bindPaymentAndExpenseForms() {
       });
     }
 
+    order.amountPaid = getOrderAmountPaid(order);
     saveState();
     document.getElementById('paymentForm').reset();
     showMessage('Payment recorded successfully.', '#paymentFormMessage');
