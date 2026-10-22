@@ -40,6 +40,14 @@ const defaultState = {
       email: 'projects@urbannest.ng',
       notes: 'Corporate branding and labels',
     },
+    {
+      id: 'CUST-1005',
+      name: 'Tunde Adebayo',
+      businessName: 'Prime Eventz',
+      phone: '0805 110 2244',
+      email: 'events@primeeventz.net',
+      notes: 'Large event graphics and backdrops',
+    },
   ],
   orders: [
     {
@@ -50,7 +58,6 @@ const defaultState = {
       orderDate: '2026-10-04',
       deadline: '2026-10-09',
       sellingPrice: 540000,
-      amountPaid: 330000,
       status: 'In Production',
       notes: 'Front and back print with chest logo',
     },
@@ -62,7 +69,6 @@ const defaultState = {
       orderDate: '2026-09-18',
       deadline: '2026-09-28',
       sellingPrice: 420000,
-      amountPaid: 420000,
       status: 'Delivered',
       notes: 'Includes laminated sleeves',
     },
@@ -74,7 +80,6 @@ const defaultState = {
       orderDate: '2026-10-05',
       deadline: '2026-10-12',
       sellingPrice: 255000,
-      amountPaid: 100000,
       status: 'Confirmed',
       notes: 'Interior and exterior banner set',
     },
@@ -86,9 +91,30 @@ const defaultState = {
       orderDate: '2026-10-01',
       deadline: '2026-10-08',
       sellingPrice: 310000,
-      amountPaid: 150000,
       status: 'Awaiting Payment',
       notes: 'Reception sign and wall vinyl',
+    },
+    {
+      id: 'ORD-2005',
+      customerId: 'CUST-1005',
+      product: 'Conference backdrop & table covers',
+      quantity: 27,
+      orderDate: '2026-10-12',
+      deadline: '2026-10-18',
+      sellingPrice: 680000,
+      status: 'Ready for Collection',
+      notes: 'Full stage branding package',
+    },
+    {
+      id: 'ORD-2006',
+      customerId: 'CUST-1003',
+      product: 'Business card and stationery set',
+      quantity: 500,
+      orderDate: '2026-09-28',
+      deadline: '2026-10-05',
+      sellingPrice: 180000,
+      status: 'Delivered',
+      notes: 'Double-sided premium card stock',
     },
   ],
   inventory: [
@@ -124,23 +150,34 @@ const defaultState = {
       minStock: 15,
       unit: 'rolls',
     },
+    {
+      id: 'INV-3005',
+      name: 'Laminating Film',
+      category: 'Finish',
+      stock: 28,
+      minStock: 18,
+      unit: 'sheets',
+    },
   ],
   payments: [
     { id: 'PAY-4001', orderId: 'ORD-2001', amount: 330000, date: '2026-10-05', notes: 'Deposit and partial payment' },
     { id: 'PAY-4002', orderId: 'ORD-2002', amount: 420000, date: '2026-09-19', notes: 'Complete collection' },
     { id: 'PAY-4003', orderId: 'ORD-2003', amount: 100000, date: '2026-10-06', notes: 'Down payment' },
     { id: 'PAY-4004', orderId: 'ORD-2004', amount: 150000, date: '2026-10-02', notes: 'Advance payment' },
+    { id: 'PAY-4005', orderId: 'ORD-2005', amount: 500000, date: '2026-10-13', notes: 'Stage branding deposit' },
+    { id: 'PAY-4006', orderId: 'ORD-2006', amount: 180000, date: '2026-09-29', notes: 'Final payment' },
   ],
   expenses: [
     { id: 'EXP-5001', date: '2026-10-03', category: 'Materials', amount: 87000, notes: 'Vinyl and ink restock' },
     { id: 'EXP-5002', date: '2026-10-04', category: 'Transport', amount: 23000, notes: 'Delivery fuel and dispatch' },
     { id: 'EXP-5003', date: '2026-10-07', category: 'Utilities', amount: 19000, notes: 'Generator and electricity' },
+    { id: 'EXP-5004', date: '2026-10-10', category: 'Marketing', amount: 35000, notes: 'Business cards and social ads' },
   ],
   adjustments: [],
 };
 
 let state = loadState();
-let salesChart; 
+let salesChart;
 let statusChart;
 
 function loadState() {
@@ -155,39 +192,12 @@ function loadState() {
       console.warn('Unable to parse saved state:', error);
     }
   }
+
   return JSON.parse(JSON.stringify(defaultState));
 }
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-function restoreDemoData() {
-  state = JSON.parse(JSON.stringify(defaultState));
-  saveState();
-  renderAll();
-  showMessage('Demo data restored successfully.', '#dashboard-view .form-message');
-}
-
-function clearStoredData() {
-  localStorage.removeItem(STORAGE_KEY);
-  state = JSON.parse(JSON.stringify(defaultState));
-  renderAll();
-  showMessage('Stored demo data has been cleared and the sample data was restored.', '#data-view .form-message');
-}
-
-function showMessage(text, selector) {
-  const el = document.querySelector(selector);
-  if (!el) return;
-  el.textContent = text;
-  el.className = 'form-message success';
-}
-
-function showError(text, selector) {
-  const el = document.querySelector(selector);
-  if (!el) return;
-  el.textContent = text;
-  el.className = 'form-message error';
 }
 
 function formatCurrency(value) {
@@ -198,7 +208,11 @@ function formatDate(dateString) {
   if (!dateString) return '—';
   const date = new Date(dateString + 'T00:00:00');
   if (Number.isNaN(date.getTime())) return dateString;
-  return new Intl.DateTimeFormat('en-NG', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
+  return new Intl.DateTimeFormat('en-NG', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
 }
 
 function escapeHtml(value) {
@@ -215,35 +229,27 @@ function getCustomerName(customerId) {
   return customer ? customer.name : 'Unknown customer';
 }
 
-function getCustomerOptions() {
-  return state.customers
-    .map((customer) => `<option value="${customer.id}">${escapeHtml(customer.name)} - ${escapeHtml(customer.businessName)}</option>`)
-    .join('');
-}
-
-function getValidOrderStatusClass(status) {
-  const normalized = status.toLowerCase().replace(/\s+/g, '-');
+function getOrderStatusClass(status) {
+  const normalized = String(status || '').toLowerCase().replace(/\s+/g, '-');
   return `status-${normalized}`;
 }
 
-function getOrderBalance(order) {
-  return Number(order.sellingPrice || 0) - Number(order.amountPaid || 0);
-}
-
-function getOrderPayments(orderId) {
-  return state.payments.filter((payment) => payment.orderId === orderId);
-}
-
 function getOrderTotalPaid(orderId) {
-  return getOrderPayments(orderId).reduce((total, item) => total + Number(item.amount || 0), 0);
+  return state.payments
+    .filter((payment) => payment.orderId === orderId)
+    .reduce((total, payment) => total + Number(payment.amount || 0), 0);
 }
 
-function getOrderBalanceFromPayments(order) {
-  return Number(order.sellingPrice || 0) - getOrderTotalPaid(order.id);
+function getOrderOutstanding(order) {
+  const orderValue = Number(order.sellingPrice || 0);
+  const totalPaid = getOrderTotalPaid(order.id);
+  return Math.max(orderValue - totalPaid, 0);
 }
 
-function getCurrentMonthKey(date) {
-  return new Date(date).toISOString().slice(0, 7);
+function getOrderValueForMonth(dateKey) {
+  return state.orders
+    .filter((order) => order.orderDate && order.orderDate.startsWith(dateKey.slice(0, 7)))
+    .reduce((sum, order) => sum + Number(order.sellingPrice || 0), 0);
 }
 
 function getMonthLabel(dateString) {
@@ -251,12 +257,12 @@ function getMonthLabel(dateString) {
   return new Intl.DateTimeFormat('en-NG', { month: 'short', year: 'numeric' }).format(date);
 }
 
-function buildSummaryCard(label, value, icon, colorClass = 'primary') {
+function buildSummaryCard(label, value, icon, tone = 'primary') {
   return `
     <article class="summary-card">
       <div class="label">
         <span>${escapeHtml(label)}</span>
-        <span class="icon-badge ${colorClass}">${escapeHtml(icon)}</span>
+        <span class="icon-badge ${tone}">${escapeHtml(icon)}</span>
       </div>
       <p class="value">${escapeHtml(value)}</p>
     </article>
@@ -265,24 +271,47 @@ function buildSummaryCard(label, value, icon, colorClass = 'primary') {
 
 function renderDashboardSummary() {
   const totalOrderValue = state.orders.reduce((sum, order) => sum + Number(order.sellingPrice || 0), 0);
-  const totalPayments = state.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const totalCashReceived = state.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   const totalExpenses = state.expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-  const totalOutstanding = state.orders.reduce((sum, order) => sum + Math.max(getOrderBalanceFromPayments(order), 0), 0);
+  const outstandingBalances = state.orders.reduce((sum, order) => sum + getOrderOutstanding(order), 0);
   const pendingOrders = state.orders.filter((order) => !['Delivered', 'Cancelled'].includes(order.status)).length;
   const lowStockCount = state.inventory.filter((item) => Number(item.stock) <= Number(item.minStock)).length;
-  const estimatedProfit = totalOrderValue - totalExpenses - totalOutstanding;
+  const inProduction = state.orders.filter((order) => order.status === 'In Production').length;
+  const estimatedProfit = totalCashReceived - totalExpenses;
 
-  const summaryCards = [
+  const cards = [
     buildSummaryCard('Total order value', formatCurrency(totalOrderValue), '₦', 'primary'),
-    buildSummaryCard('Payments received', formatCurrency(totalPayments), '₵', 'accent'),
-    buildSummaryCard('Outstanding balances', formatCurrency(totalOutstanding), '◌', 'warning'),
+    buildSummaryCard('Cash received', formatCurrency(totalCashReceived), '₵', 'accent'),
+    buildSummaryCard('Outstanding balances', formatCurrency(outstandingBalances), '◌', 'warning'),
     buildSummaryCard('Recorded expenses', formatCurrency(totalExpenses), '−', 'danger'),
     buildSummaryCard('Estimated profit', formatCurrency(estimatedProfit), '✓', 'primary'),
     buildSummaryCard('Pending orders', String(pendingOrders), '!', 'warning'),
     buildSummaryCard('Low-stock items', String(lowStockCount), '⚠', 'danger'),
+    buildSummaryCard('In production', String(inProduction), '🖨', 'accent'),
   ];
 
-  document.getElementById('dashboardSummaryCards').innerHTML = summaryCards.join('');
+  document.getElementById('dashboardSummaryCards').innerHTML = cards.join('');
+
+  const orderPipeline = {
+    'Awaiting Payment': state.orders.filter((order) => order.status === 'Awaiting Payment').length,
+    'In Production': state.orders.filter((order) => order.status === 'In Production').length,
+    'Ready for Collection': state.orders.filter((order) => order.status === 'Ready for Collection').length,
+    Delivered: state.orders.filter((order) => order.status === 'Delivered').length,
+  };
+
+  const pipelineHtml = Object.entries(orderPipeline)
+    .map(([label, count]) => `
+      <div class="status-pipeline-item">
+        <div class="status-pipeline-head">
+          <span>${escapeHtml(label)}</span>
+          <span class="status-badge ${getOrderStatusClass(label)}">${count}</span>
+        </div>
+        <div class="status-pipeline-value">${count}</div>
+      </div>
+    `)
+    .join('');
+
+  document.getElementById('statusPipeline').innerHTML = pipelineHtml;
 }
 
 function renderRecentOrders() {
@@ -290,12 +319,11 @@ function renderRecentOrders() {
     .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate))
     .slice(0, 5)
     .map((order) => {
-      const customerName = getCustomerName(order.customerId);
-      const statusClass = getValidOrderStatusClass(order.status);
+      const statusClass = getOrderStatusClass(order.status);
       return `
         <tr>
           <td>${escapeHtml(order.id)}</td>
-          <td>${escapeHtml(customerName)}</td>
+          <td>${escapeHtml(getCustomerName(order.customerId))}</td>
           <td><span class="status-badge ${statusClass}">${escapeHtml(order.status)}</span></td>
           <td>${formatCurrency(order.sellingPrice)}</td>
         </tr>
@@ -325,34 +353,37 @@ function renderSalesChart() {
   const monthMap = new Map();
   const labels = [];
   const salesValues = [];
+  const collectionsValues = [];
 
   for (let i = 5; i >= 0; i -= 1) {
     const date = new Date();
-    date.setMonth(date.getMonth() - i);
+    date.setMonth(date.getMonth() - i, 1);
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     labels.push(new Intl.DateTimeFormat('en-NG', { month: 'short' }).format(date));
     monthMap.set(key, { sales: 0, collections: 0 });
   }
 
   state.orders.forEach((order) => {
-    const key = getCurrentMonthKey(order.orderDate);
-    if (monthMap.has(key)) {
+    const key = order.orderDate ? order.orderDate.slice(0, 7) : null;
+    if (key && monthMap.has(key)) {
       monthMap.get(key).sales += Number(order.sellingPrice || 0);
     }
   });
 
   state.payments.forEach((payment) => {
-    const key = getCurrentMonthKey(payment.date);
-    if (monthMap.has(key)) {
+    const key = payment.date ? payment.date.slice(0, 7) : null;
+    if (key && monthMap.has(key)) {
       monthMap.get(key).collections += Number(payment.amount || 0);
     }
   });
 
-  labels.forEach((label) => {
-    const actualDate = new Date();
-    actualDate.setMonth(actualDate.getMonth() - labels.length + labels.indexOf(label) + 1);
-    const key = `${actualDate.getFullYear()}-${String(actualDate.getMonth() + 1).padStart(2, '0')}`;
-    salesValues.push((monthMap.get(key) || { sales: 0 }).sales);
+  labels.forEach((label, index) => {
+    const baseDate = new Date();
+    baseDate.setMonth(baseDate.getMonth() - (labels.length - 1 - index), 1);
+    const key = `${baseDate.getFullYear()}-${String(baseDate.getMonth() + 1).padStart(2, '0')}`;
+    const values = monthMap.get(key) || { sales: 0, collections: 0 };
+    salesValues.push(values.sales);
+    collectionsValues.push(values.collections);
   });
 
   const salesCtx = document.getElementById('salesChart');
@@ -366,18 +397,13 @@ function renderSalesChart() {
         {
           label: 'Order value',
           data: salesValues,
-          backgroundColor: '#1d4ed8',
+          backgroundColor: '#193d8d',
           borderRadius: 8,
         },
         {
           label: 'Collections',
-          data: labels.map((label, index) => {
-            const actualDate = new Date();
-            actualDate.setMonth(actualDate.getMonth() - labels.length + index + 1);
-            const key = `${actualDate.getFullYear()}-${String(actualDate.getMonth() + 1).padStart(2, '0')}`;
-            return (monthMap.get(key) || { collections: 0 }).collections;
-          }),
-          backgroundColor: '#22c55e',
+          data: collectionsValues,
+          backgroundColor: '#1a9c74',
           borderRadius: 8,
         },
       ],
@@ -437,32 +463,31 @@ function renderOrders() {
   const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
 
   const filteredOrders = state.orders.filter((order) => {
-    const matchesText =
+    const matchesSearch =
       order.id.toLowerCase().includes(query) ||
       getCustomerName(order.customerId).toLowerCase().includes(query) ||
       order.product.toLowerCase().includes(query);
-
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-    return matchesText && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
 
   const rows = filteredOrders
     .slice()
     .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate))
     .map((order) => {
-      const customerName = getCustomerName(order.customerId);
-      const statusClass = getValidOrderStatusClass(order.status);
-      const balance = getOrderBalanceFromPayments(order);
+      const statusClass = getOrderStatusClass(order.status);
+      const paid = getOrderTotalPaid(order.id);
+      const balance = getOrderOutstanding(order);
       return `
         <tr>
           <td>${escapeHtml(order.id)}</td>
-          <td>${escapeHtml(customerName)}</td>
+          <td>${escapeHtml(getCustomerName(order.customerId))}</td>
           <td>${escapeHtml(order.product)}</td>
           <td>${escapeHtml(order.quantity)}</td>
           <td>${escapeHtml(formatDate(order.deadline))}</td>
           <td>${formatCurrency(order.sellingPrice)}</td>
-          <td>${formatCurrency(order.amountPaid)}</td>
-          <td>${formatCurrency(Math.max(balance, 0))}</td>
+          <td>${formatCurrency(paid)}</td>
+          <td>${formatCurrency(balance)}</td>
           <td><span class="status-badge ${statusClass}">${escapeHtml(order.status)}</span></td>
           <td>
             <div class="action-group">
@@ -538,9 +563,13 @@ function renderInventory() {
     .join('');
 
   document.getElementById('inventoryTableBody').innerHTML = rows || '<tr><td colspan="7" class="empty-state">No inventory items yet.</td></tr>';
-  document.getElementById('stockMaterialId').innerHTML = state.inventory
-    .map((item) => `<option value="${item.id}">${escapeHtml(item.name)}</option>`)
-    .join('');
+
+  const stockMaterialSelect = document.getElementById('stockMaterialId');
+  if (stockMaterialSelect) {
+    stockMaterialSelect.innerHTML = state.inventory
+      .map((item) => `<option value="${item.id}">${escapeHtml(item.name)}</option>`)
+      .join('');
+  }
 }
 
 function renderPaymentOverview() {
@@ -550,7 +579,7 @@ function renderPaymentOverview() {
     .map((order) => {
       const customerName = getCustomerName(order.customerId);
       const paid = getOrderTotalPaid(order.id);
-      const balance = Math.max(Number(order.sellingPrice || 0) - paid, 0);
+      const balance = getOrderOutstanding(order);
       return `
         <tr>
           <td>${escapeHtml(order.id)}</td>
@@ -569,23 +598,20 @@ function renderPaymentOverview() {
 function renderReportSummary() {
   const totalSales = state.orders.reduce((sum, order) => sum + Number(order.sellingPrice || 0), 0);
   const totalCollections = state.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-  const totalOutstanding = state.orders.reduce((sum, order) => sum + Math.max(getOrderBalanceFromPayments(order), 0), 0);
+  const outstandingBalances = state.orders.reduce((sum, order) => sum + getOrderOutstanding(order), 0);
   const totalExpenses = state.expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-  const totalProfit = totalSales - totalExpenses;
 
   const cards = [
     buildSummaryCard('Sales', formatCurrency(totalSales), '₦', 'primary'),
     buildSummaryCard('Collections', formatCurrency(totalCollections), '₵', 'accent'),
-    buildSummaryCard('Outstanding', formatCurrency(totalOutstanding), '◌', 'warning'),
-    buildSummaryCard('Expense', formatCurrency(totalExpenses), '−', 'danger'),
+    buildSummaryCard('Outstanding', formatCurrency(outstandingBalances), '◌', 'warning'),
+    buildSummaryCard('Expenses', formatCurrency(totalExpenses), '−', 'danger'),
   ];
 
   document.getElementById('reportSummaryCards').innerHTML = cards.join('');
 
-  const monthlySummary = buildMonthlySummary();
-  const dailySummary = buildDailySummary();
-  document.getElementById('monthlyReportBody').innerHTML = monthlySummary;
-  document.getElementById('dailyReportBody').innerHTML = dailySummary;
+  document.getElementById('monthlyReportBody').innerHTML = buildMonthlySummary();
+  document.getElementById('dailyReportBody').innerHTML = buildDailySummary();
 }
 
 function buildMonthlySummary() {
@@ -599,26 +625,26 @@ function buildMonthlySummary() {
   }
 
   state.orders.forEach((order) => {
-    const key = getCurrentMonthKey(order.orderDate);
-    if (monthMap.has(key)) {
+    const key = order.orderDate ? order.orderDate.slice(0, 7) : null;
+    if (key && monthMap.has(key)) {
       monthMap.get(key).sales += Number(order.sellingPrice || 0);
-      monthMap.get(key).outstanding += Math.max(Number(order.sellingPrice || 0) - getOrderTotalPaid(order.id), 0);
+      monthMap.get(key).outstanding += getOrderOutstanding(order);
     }
   });
 
   state.payments.forEach((payment) => {
-    const key = getCurrentMonthKey(payment.date);
-    if (monthMap.has(key)) monthMap.get(key).collections += Number(payment.amount || 0);
+    const key = payment.date ? payment.date.slice(0, 7) : null;
+    if (key && monthMap.has(key)) monthMap.get(key).collections += Number(payment.amount || 0);
   });
 
   state.expenses.forEach((expense) => {
-    const key = getCurrentMonthKey(expense.date);
-    if (monthMap.has(key)) monthMap.get(key).expenses += Number(expense.amount || 0);
+    const key = expense.date ? expense.date.slice(0, 7) : null;
+    if (key && monthMap.has(key)) monthMap.get(key).expenses += Number(expense.amount || 0);
   });
 
   const rows = Array.from(monthMap.entries())
     .map(([key, value]) => {
-      const estimatedProfit = value.sales - value.expenses;
+      const estimatedProfit = value.collections - value.expenses;
       return `
         <tr>
           <td>${getMonthLabel(`${key}-01`)}</td>
@@ -648,10 +674,9 @@ function buildDailySummary() {
   }
 
   state.orders.forEach((order) => {
-    const dateKey = order.orderDate;
-    if (amounts.has(dateKey)) {
-      amounts.get(dateKey).sales += Number(order.sellingPrice || 0);
-      amounts.get(dateKey).outstanding += Math.max(Number(order.sellingPrice || 0) - getOrderTotalPaid(order.id), 0);
+    if (amounts.has(order.orderDate)) {
+      amounts.get(order.orderDate).sales += Number(order.sellingPrice || 0);
+      amounts.get(order.orderDate).outstanding += getOrderOutstanding(order);
     }
   });
 
@@ -691,6 +716,22 @@ function renderDataSummary() {
   document.getElementById('dataSummaryCards').innerHTML = cards.join('');
 }
 
+function populateOrderSelects() {
+  const paymentSelect = document.getElementById('paymentOrderId');
+  if (paymentSelect) {
+    paymentSelect.innerHTML = state.orders.length
+      ? state.orders.map((order) => `<option value="${order.id}">${escapeHtml(order.id)} - ${escapeHtml(getCustomerName(order.customerId))}</option>`).join('')
+      : '<option value="">No orders available</option>';
+  }
+
+  const customerSelect = document.getElementById('orderCustomerId');
+  if (customerSelect) {
+    customerSelect.innerHTML = state.customers.length
+      ? state.customers.map((customer) => `<option value="${customer.id}">${escapeHtml(customer.name)} - ${escapeHtml(customer.businessName)}</option>`).join('')
+      : '<option value="">No customers available</option>';
+  }
+}
+
 function renderAll() {
   renderDashboardSummary();
   renderRecentOrders();
@@ -704,8 +745,6 @@ function renderAll() {
   renderReportSummary();
   renderDataSummary();
   populateOrderSelects();
-  populateCustomerSelects();
-  populateMaterialSelects();
   syncPageTitle();
 }
 
@@ -722,32 +761,6 @@ function syncPageTitle() {
     data: 'Data management',
   };
   pageTitle.textContent = titles[activeView] || 'Dashboard';
-}
-
-function populateOrderSelects() {
-  const options = state.orders
-    .map((order) => `<option value="${order.id}">${escapeHtml(order.id)} - ${escapeHtml(getCustomerName(order.customerId))}</option>`)
-    .join('');
-  const paymentSelect = document.getElementById('paymentOrderId');
-  if (paymentSelect) paymentSelect.innerHTML = options || '<option value="">No orders available</option>';
-}
-
-function populateCustomerSelects() {
-  const customerSelect = document.getElementById('orderCustomerId');
-  if (customerSelect) {
-    customerSelect.innerHTML = state.customers
-      .map((customer) => `<option value="${customer.id}">${escapeHtml(customer.name)} - ${escapeHtml(customer.businessName)}</option>`)
-      .join('');
-  }
-}
-
-function populateMaterialSelects() {
-  const stockMaterialSelect = document.getElementById('stockMaterialId');
-  if (stockMaterialSelect) {
-    stockMaterialSelect.innerHTML = state.inventory
-      .map((item) => `<option value="${item.id}">${escapeHtml(item.name)}</option>`)
-      .join('');
-  }
 }
 
 function bindNavigation() {
@@ -793,9 +806,9 @@ function bindGlobalSearch() {
           <td>${escapeHtml(order.quantity)}</td>
           <td>${escapeHtml(formatDate(order.deadline))}</td>
           <td>${formatCurrency(order.sellingPrice)}</td>
-          <td>${formatCurrency(order.amountPaid)}</td>
-          <td>${formatCurrency(Math.max(getOrderBalanceFromPayments(order), 0))}</td>
-          <td><span class="status-badge ${getValidOrderStatusClass(order.status)}">${escapeHtml(order.status)}</span></td>
+          <td>${formatCurrency(getOrderTotalPaid(order.id))}</td>
+          <td>${formatCurrency(getOrderOutstanding(order))}</td>
+          <td><span class="status-badge ${getOrderStatusClass(order.status)}">${escapeHtml(order.status)}</span></td>
           <td>—</td>
         </tr>
       `).join('')
@@ -818,6 +831,7 @@ function bindGlobalSearch() {
 
 function bindOrderForm() {
   const form = document.getElementById('orderForm');
+
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     const order = {
@@ -828,7 +842,6 @@ function bindOrderForm() {
       orderDate: document.getElementById('orderDate').value,
       deadline: document.getElementById('orderDeadline').value,
       sellingPrice: Number(document.getElementById('orderSellingPrice').value),
-      amountPaid: Number(document.getElementById('orderAmountPaid').value),
       status: document.getElementById('orderStatus').value,
       notes: document.getElementById('orderNotes').value.trim(),
     };
@@ -838,16 +851,32 @@ function bindOrderForm() {
       return;
     }
 
-    if (order.amountPaid > order.sellingPrice) {
-      showError('Amount paid cannot exceed the selling price unless an authorised adjustment is recorded in payments.', '#orderFormMessage');
+    const amountPaid = Number(document.getElementById('orderAmountPaid').value || 0);
+    if (amountPaid > order.sellingPrice) {
+      showError('The amount paid cannot exceed the order value.', '#orderFormMessage');
       return;
     }
 
     const existingIndex = state.orders.findIndex((item) => item.id === order.id);
     if (existingIndex >= 0) {
-      state.orders[existingIndex] = order;
+      state.orders[existingIndex] = { ...state.orders[existingIndex], ...order };
     } else {
       state.orders.push(order);
+    }
+
+    const existingPayments = state.payments.filter((payment) => payment.orderId === order.id);
+    if (amountPaid > 0 && !existingPayments.length) {
+      state.payments.push({
+        id: `PAY-${Date.now()}`,
+        orderId: order.id,
+        amount: amountPaid,
+        date: order.orderDate,
+        notes: 'Initial payment recorded from order form',
+      });
+    } else if (amountPaid > 0 && existingPayments.length) {
+      const firstPayment = existingPayments[0];
+      firstPayment.amount = amountPaid;
+      firstPayment.date = order.orderDate;
     }
 
     saveState();
@@ -870,6 +899,7 @@ function bindOrderForm() {
     if (!target) return;
     const order = state.orders.find((item) => item.id === target.dataset.orderId);
     if (!order) return;
+
     document.getElementById('orderId').value = order.id;
     document.getElementById('orderCustomerId').value = order.customerId;
     document.getElementById('orderProduct').value = order.product;
@@ -877,7 +907,7 @@ function bindOrderForm() {
     document.getElementById('orderDate').value = order.orderDate;
     document.getElementById('orderDeadline').value = order.deadline;
     document.getElementById('orderSellingPrice').value = order.sellingPrice;
-    document.getElementById('orderAmountPaid').value = order.amountPaid;
+    document.getElementById('orderAmountPaid').value = getOrderTotalPaid(order.id);
     document.getElementById('orderStatus').value = order.status;
     document.getElementById('orderNotes').value = order.notes;
     document.getElementById('orderFormTitle').textContent = `Edit ${order.id}`;
@@ -1059,6 +1089,10 @@ function bindMaterialForm() {
       material.stock -= quantity;
     }
 
+    if (notes) {
+      material.notes = notes;
+    }
+
     saveState();
     document.getElementById('stockMovementForm').reset();
     showMessage(`Stock ${movementType === 'received' ? 'received' : 'used'} recorded successfully.`, '#stockMovementMessage');
@@ -1111,7 +1145,6 @@ function bindPaymentAndExpenseForms() {
       });
     }
 
-    order.amountPaid = getOrderTotalPaid(orderId);
     saveState();
     document.getElementById('paymentForm').reset();
     showMessage('Payment recorded successfully.', '#paymentFormMessage');
@@ -1144,7 +1177,11 @@ function bindPaymentAndExpenseForms() {
 function bindResetButtons() {
   document.getElementById('resetDemoBtn').addEventListener('click', () => {
     if (window.confirm('Reset all demo data? This will replace the current localStorage data.')) {
-      restoreDemoData();
+      state = JSON.parse(JSON.stringify(defaultState));
+      saveState();
+      renderAll();
+      document.getElementById('dataManagementMessage').textContent = 'Demo data was reset to the sample dataset.';
+      document.getElementById('dataManagementMessage').className = 'form-message success';
     }
   });
 
@@ -1153,28 +1190,57 @@ function bindResetButtons() {
       localStorage.removeItem(STORAGE_KEY);
       state = JSON.parse(JSON.stringify(defaultState));
       renderAll();
-      showMessage('Stored data cleared and restored to demo mode.', '#data-view .form-message');
+      const messageEl = document.getElementById('dataManagementMessage');
+      messageEl.textContent = 'Stored data cleared and restored to the demo dataset.';
+      messageEl.className = 'form-message success';
     }
   });
 
   document.getElementById('restoreDemoBtn').addEventListener('click', () => {
     if (window.confirm('Restore the built-in demo data?')) {
-      restoreDemoData();
+      state = JSON.parse(JSON.stringify(defaultState));
+      saveState();
+      renderAll();
+      const messageEl = document.getElementById('dataManagementMessage');
+      messageEl.textContent = 'Sample data restored.';
+      messageEl.className = 'form-message success';
     }
   });
 }
 
 function bindSearchFilters() {
-  document.getElementById('orderSearch').addEventListener('input', renderOrders);
-  document.getElementById('orderStatusFilter').addEventListener('change', renderOrders);
-  document.getElementById('customerSearch').addEventListener('input', renderCustomers);
+  const orderSearch = document.getElementById('orderSearch');
+  const orderStatusFilter = document.getElementById('orderStatusFilter');
+  const customerSearch = document.getElementById('customerSearch');
+
+  if (orderSearch) orderSearch.addEventListener('input', renderOrders);
+  if (orderStatusFilter) orderStatusFilter.addEventListener('change', renderOrders);
+  if (customerSearch) customerSearch.addEventListener('input', renderCustomers);
+}
+
+function showMessage(text, selector) {
+  const el = document.querySelector(selector);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'form-message success';
+}
+
+function showError(text, selector) {
+  const el = document.querySelector(selector);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'form-message error';
 }
 
 function initDefaults() {
   const today = new Date().toISOString().slice(0, 10);
-  document.getElementById('orderDate').value = today;
-  document.getElementById('paymentDate').value = today;
-  document.getElementById('expenseDate').value = today;
+  const orderDate = document.getElementById('orderDate');
+  const paymentDate = document.getElementById('paymentDate');
+  const expenseDate = document.getElementById('expenseDate');
+
+  if (orderDate) orderDate.value = today;
+  if (paymentDate) paymentDate.value = today;
+  if (expenseDate) expenseDate.value = today;
 }
 
 function init() {

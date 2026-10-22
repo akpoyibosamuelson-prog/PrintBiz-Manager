@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="PrintBiz Manager - professional printing business dashboard demo"
+      content="PrintBiz Manager - professional printing business operations dashboard"
     />
     <title>PrintBiz Manager</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -56,12 +56,12 @@
       <div class="main-panel">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Operations Overview</p>
+            <p class="eyebrow">Operations overview</p>
             <h2 id="pageTitle">Dashboard</h2>
           </div>
           <div class="topbar-actions">
             <div class="search-inline">
-              <label class="sr-only" for="globalSearch">Search records</label>
+              <label class="sr-only" for="globalSearch">Search all records</label>
               <input id="globalSearch" type="search" placeholder="Search all records" />
             </div>
             <button type="button" class="secondary-btn" id="resetDemoBtn">
@@ -73,6 +73,8 @@
         <main class="content-area">
           <section id="dashboard-view" class="view active" aria-live="polite">
             <div class="summary-grid" id="dashboardSummaryCards"></div>
+
+            <div id="statusPipeline" class="status-pipeline" aria-label="Order pipeline"></div>
 
             <div class="chart-grid">
               <article class="panel chart-panel">
@@ -376,7 +378,7 @@
                       <th>Material</th>
                       <th>Category</th>
                       <th>Stock</th>
-                      <th>Min Stock</th>
+                      <th>Min stock</th>
                       <th>Unit</th>
                       <th>Status</th>
                       <th>Actions</th>
@@ -479,7 +481,7 @@
                     <tr>
                       <th>Order</th>
                       <th>Customer</th>
-                      <th>Order Value</th>
+                      <th>Order value</th>
                       <th>Paid</th>
                       <th>Balance</th>
                     </tr>
@@ -539,12 +541,12 @@
             <div class="panel data-panel">
               <h3>Data management</h3>
               <p>
-                This demo stores data in browser localStorage. It is useful for testing
-                the interface, but it is not a secure multi-user database and should not be
-                relied on for production data.
+                This demo stores data in browser localStorage. It is useful for testing the interface,
+                but it is not a secure multi-user database and should not be relied on for production data.
               </p>
 
               <div class="summary-grid compact-grid" id="dataSummaryCards"></div>
+              <p id="dataManagementMessage" class="form-message" aria-live="polite"></p>
 
               <div class="form-actions stacked-actions">
                 <button type="button" class="warning-btn" id="clearLocalStorageBtn">

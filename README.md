@@ -8,13 +8,17 @@ The application is built using HTML5, CSS3 and vanilla JavaScript. It is intende
 
 ## Included features
 
-- Dashboard with summary cards for order value, payments received, outstanding balances, expenses, estimated profit, pending orders and low-stock items.
+- Dashboard with summary cards for order value, cash received, outstanding balances, expenses, estimated profit, pending orders and low-stock items.
 - Order management with add, edit, search, filter, status tracking and delete controls.
 - Customer directory with add, edit, search and order-count tracking.
-- Inventory management for materials, stock movements, low-stock alerts and minimum stock configuration.
+- Inventory management for materials, stock movements, low-stock alerts and minimum-stock configuration.
 - Payments and expenses tracker to record customer payments and business costs.
 - Reports section with monthly and daily summaries for sales, collections, outstanding balances, expenses and estimated profit.
 - Demo data reset and localStorage management controls.
+
+## Production readiness note
+
+This is a presentation-grade demo, not a production system. If a real client needed a live business application, it would require a secure backend, authentication, role-based permissions, encrypted storage, automated backups, audit logging, and a proper deployment and monitoring setup. The browser localStorage model used here is intentionally simple and transparent, and it should not be mistaken for a secure multi-user system.
 
 ## File structure
 
