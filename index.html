@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="PrintBiz Manager - professional printing business dashboard demo"
+    />
+    <title>PrintBiz Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-block">
+          <div class="brand-mark">PB</div>
+          <div>
+            <h1>PrintBiz</h1>
+            <p>Manager</p>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav" aria-label="Main navigation">
+          <button class="nav-item active" type="button" data-view="dashboard">
+            <span>Dashboard</span>
+          </button>
+          <button class="nav-item" type="button" data-view="orders">
+            <span>Orders</span>
+          </button>
+          <button class="nav-item" type="button" data-view="customers">
+            <span>Customers</span>
+          </button>
+          <button class="nav-item" type="button" data-view="inventory">
+            <span>Inventory</span>
+          </button>
+          <button class="nav-item" type="button" data-view="payments">
+            <span>Payments & Expenses</span>
+          </button>
+          <button class="nav-item" type="button" data-view="reports">
+            <span>Reports</span>
+          </button>
+          <button class="nav-item" type="button" data-view="data">
+            <span>Data & Reset</span>
+          </button>
+        </nav>
+      </aside>
+
+      <div class="main-panel">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Operations Overview</p>
+            <h2 id="pageTitle">Dashboard</h2>
+          </div>
+          <div class="topbar-actions">
+            <div class="search-inline">
+              <label class="sr-only" for="globalSearch">Search records</label>
+              <input id="globalSearch" type="search" placeholder="Search all records" />
+            </div>
+            <button type="button" class="secondary-btn" id="resetDemoBtn">
+              Reset demo data
+            </button>
+          </div>
+        </header>
+
+        <main class="content-area">
+          <section id="dashboard-view" class="view active" aria-live="polite">
+            <div class="summary-grid" id="dashboardSummaryCards"></div>
+
+            <div class="chart-grid">
+              <article class="panel chart-panel">
+                <div class="panel-header">
+                  <h3>Sales performance</h3>
+                </div>
+                <canvas id="salesChart" aria-label="Sales performance chart"></canvas>
+              </article>
+
+              <article class="panel chart-panel">
+                <div class="panel-header">
+                  <h3>Order status mix</h3>
+                </div>
+                <canvas id="statusChart" aria-label="Order status chart"></canvas>
+              </article>
+            </div>
+
+            <div class="two-column-grid">
+              <article class="panel">
+                <div class="panel-header">
+                  <h3>Recent orders</h3>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Status</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recentOrdersTable"></tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article class="panel">
+                <div class="panel-header">
+                  <h3>Low-stock alerts</h3>
+                </div>
+                <ul id="lowStockList" class="alert-list"></ul>
+              </article>
+            </div>
+          </section>
+
+          <section id="orders-view" class="view" aria-live="polite">
+            <div class="panel form-panel">
+              <div class="panel-header">
+                <h3 id="orderFormTitle">Add order</h3>
+              </div>
+
+              <form id="orderForm" novalidate>
+                <input type="hidden" id="orderId" />
+
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="orderCustomerId">Customer</label>
+                    <select id="orderCustomerId" required></select>
+                  </div>
+                  <div class="field">
+                    <label for="orderProduct">Product</label>
+                    <input id="orderProduct" type="text" maxlength="120" required />
+                  </div>
+                  <div class="field">
+                    <label for="orderQuantity">Quantity</label>
+                    <input id="orderQuantity" type="number" min="1" step="1" required />
+                  </div>
+                  <div class="field">
+                    <label for="orderDate">Order date</label>
+                    <input id="orderDate" type="date" required />
+                  </div>
+                  <div class="field">
+                    <label for="orderDeadline">Deadline</label>
+                    <input id="orderDeadline" type="date" required />
+                  </div>
+                  <div class="field">
+                    <label for="orderSellingPrice">Selling price (₦)</label>
+                    <input id="orderSellingPrice" type="number" min="0" step="100" required />
+                  </div>
+                  <div class="field">
+                    <label for="orderAmountPaid">Amount paid (₦)</label>
+                    <input id="orderAmountPaid" type="number" min="0" step="100" required />
+                  </div>
+                  <div class="field">
+                    <label for="orderStatus">Production status</label>
+                    <select id="orderStatus" required>
+                      <option value="Quotation">Quotation</option>
+                      <option value="Awaiting Payment">Awaiting Payment</option>
+                      <option value="Confirmed">Confirmed</option>
+                      <option value="In Production">In Production</option>
+                      <option value="Ready for Collection">Ready for Collection</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field full-width">
+                  <label for="orderNotes">Notes</label>
+                  <textarea id="orderNotes" rows="3" maxlength="500"></textarea>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="primary-btn">Save order</button>
+                  <button type="button" class="muted-btn" id="cancelOrderEdit">Clear form</button>
+                </div>
+                <p id="orderFormMessage" class="form-message" aria-live="polite"></p>
+              </form>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header row-split">
+                <h3>Order records</h3>
+                <div class="toolbar-inline">
+                  <input id="orderSearch" type="search" placeholder="Search orders" />
+                  <select id="orderStatusFilter">
+                    <option value="all">All statuses</option>
+                    <option value="Quotation">Quotation</option>
+                    <option value="Awaiting Payment">Awaiting Payment</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="In Production">In Production</option>
+                    <option value="Ready for Collection">Ready for Collection</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Customer</th>
+                      <th>Product</th>
+                      <th>Qty</th>
+                      <th>Deadline</th>
+                      <th>Value</th>
+                      <th>Paid</th>
+                      <th>Balance</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ordersTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section id="customers-view" class="view" aria-live="polite">
+            <div class="panel form-panel">
+              <div class="panel-header">
+                <h3 id="customerFormTitle">Add customer</h3>
+              </div>
+
+              <form id="customerForm" novalidate>
+                <input type="hidden" id="customerId" />
+
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="customerName">Customer name</label>
+                    <input id="customerName" type="text" required />
+                  </div>
+                  <div class="field">
+                    <label for="customerBusiness">Business name</label>
+                    <input id="customerBusiness" type="text" required />
+                  </div>
+                  <div class="field">
+                    <label for="customerPhone">Telephone number</label>
+                    <input id="customerPhone" type="tel" required />
+                  </div>
+                  <div class="field">
+                    <label for="customerEmail">Email</label>
+                    <input id="customerEmail" type="email" required />
+                  </div>
+                </div>
+
+                <div class="field full-width">
+                  <label for="customerNotes">Customer notes</label>
+                  <textarea id="customerNotes" rows="3" maxlength="500"></textarea>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="primary-btn">Save customer</button>
+                  <button type="button" class="muted-btn" id="cancelCustomerEdit">Clear form</button>
+                </div>
+                <p id="customerFormMessage" class="form-message" aria-live="polite"></p>
+              </form>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header row-split">
+                <h3>Customer directory</h3>
+                <input id="customerSearch" type="search" placeholder="Search customers" />
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Business</th>
+                      <th>Phone</th>
+                      <th>Email</th>
+                      <th>Orders</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="customersTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section id="inventory-view" class="view" aria-live="polite">
+            <div class="panel form-panel">
+              <div class="panel-header">
+                <h3 id="inventoryFormTitle">Add material</h3>
+              </div>
+
+              <form id="materialForm" novalidate>
+                <input type="hidden" id="materialId" />
+
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="materialName">Material name</label>
+                    <input id="materialName" type="text" required />
+                  </div>
+                  <div class="field">
+                    <label for="materialCategory">Category</label>
+                    <input id="materialCategory" type="text" required />
+                  </div>
+                  <div class="field">
+                    <label for="materialUnit">Unit</label>
+                    <input id="materialUnit" type="text" value="pcs" required />
+                  </div>
+                  <div class="field">
+                    <label for="materialMinStock">Minimum stock</label>
+                    <input id="materialMinStock" type="number" min="0" step="1" required />
+                  </div>
+                  <div class="field">
+                    <label for="materialStock">Current stock</label>
+                    <input id="materialStock" type="number" min="0" step="1" required />
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="primary-btn">Save material</button>
+                  <button type="button" class="muted-btn" id="cancelMaterialEdit">Clear form</button>
+                </div>
+                <p id="materialFormMessage" class="form-message" aria-live="polite"></p>
+              </form>
+            </div>
+
+            <div class="panel form-panel">
+              <div class="panel-header">
+                <h3>Record stock movement</h3>
+              </div>
+
+              <form id="stockMovementForm" novalidate>
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="stockMaterialId">Material</label>
+                    <select id="stockMaterialId" required></select>
+                  </div>
+                  <div class="field">
+                    <label for="stockMovementType">Movement</label>
+                    <select id="stockMovementType" required>
+                      <option value="received">Stock received</option>
+                      <option value="used">Stock used</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="stockMovementQuantity">Quantity</label>
+                    <input id="stockMovementQuantity" type="number" min="1" step="1" required />
+                  </div>
+                  <div class="field">
+                    <label for="stockMovementNotes">Notes</label>
+                    <input id="stockMovementNotes" type="text" maxlength="200" />
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="primary-btn">Apply stock movement</button>
+                </div>
+                <p id="stockMovementMessage" class="form-message" aria-live="polite"></p>
+              </form>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Material inventory</h3>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Material</th>
+                      <th>Category</th>
+                      <th>Stock</th>
+                      <th>Min Stock</th>
+                      <th>Unit</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inventoryTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section id="payments-view" class="view" aria-live="polite">
+            <div class="panel form-panel">
+              <div class="panel-header">
+                <h3>Record customer payment</h3>
+              </div>
+
+              <form id="paymentForm" novalidate>
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="paymentOrderId">Order</label>
+                    <select id="paymentOrderId" required></select>
+                  </div>
+                  <div class="field">
+                    <label for="paymentDate">Payment date</label>
+                    <input id="paymentDate" type="date" required />
+                  </div>
+                  <div class="field">
+                    <label for="paymentAmount">Amount paid (₦)</label>
+                    <input id="paymentAmount" type="number" min="1" step="100" required />
+                  </div>
+                  <div class="field checkbox-field">
+                    <label>
+                      <input id="paymentAuthorizedAdjustment" type="checkbox" />
+                      Authorised adjustment beyond remaining balance
+                    </label>
+                  </div>
+                </div>
+
+                <div class="field full-width">
+                  <label for="paymentNotes">Notes</label>
+                  <textarea id="paymentNotes" rows="3" maxlength="300"></textarea>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="primary-btn">Record payment</button>
+                </div>
+                <p id="paymentFormMessage" class="form-message" aria-live="polite"></p>
+              </form>
+            </div>
+
+            <div class="panel form-panel">
+              <div class="panel-header">
+                <h3>Record business expense</h3>
+              </div>
+
+              <form id="expenseForm" novalidate>
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="expenseDate">Expense date</label>
+                    <input id="expenseDate" type="date" required />
+                  </div>
+                  <div class="field">
+                    <label for="expenseCategory">Category</label>
+                    <select id="expenseCategory" required>
+                      <option value="Materials">Materials</option>
+                      <option value="Utilities">Utilities</option>
+                      <option value="Marketing">Marketing</option>
+                      <option value="Transport">Transport</option>
+                      <option value="Staff">Staff</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="expenseAmount">Amount (₦)</label>
+                    <input id="expenseAmount" type="number" min="1" step="100" required />
+                  </div>
+                </div>
+
+                <div class="field full-width">
+                  <label for="expenseNotes">Description</label>
+                  <textarea id="expenseNotes" rows="3" maxlength="300"></textarea>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="primary-btn">Save expense</button>
+                </div>
+                <p id="expenseFormMessage" class="form-message" aria-live="polite"></p>
+              </form>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Payment overview</h3>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Order</th>
+                      <th>Customer</th>
+                      <th>Order Value</th>
+                      <th>Paid</th>
+                      <th>Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="paymentOverviewBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section id="reports-view" class="view" aria-live="polite">
+            <div class="summary-grid" id="reportSummaryCards"></div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Monthly summary</h3>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Month</th>
+                      <th>Sales</th>
+                      <th>Collections</th>
+                      <th>Outstanding</th>
+                      <th>Expenses</th>
+                      <th>Estimated profit</th>
+                    </tr>
+                  </thead>
+                  <tbody id="monthlyReportBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Daily snapshot</h3>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Sales</th>
+                      <th>Collections</th>
+                      <th>Expenses</th>
+                      <th>Outstanding</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dailyReportBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section id="data-view" class="view" aria-live="polite">
+            <div class="panel data-panel">
+              <h3>Data management</h3>
+              <p>
+                This demo stores data in browser localStorage. It is useful for testing
+                the interface, but it is not a secure multi-user database and should not be
+                relied on for production data.
+              </p>
+
+              <div class="summary-grid compact-grid" id="dataSummaryCards"></div>
+
+              <div class="form-actions stacked-actions">
+                <button type="button" class="warning-btn" id="clearLocalStorageBtn">
+                  Clear stored demo data
+                </button>
+                <button type="button" class="primary-btn" id="restoreDemoBtn">
+                  Restore sample data
+                </button>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
